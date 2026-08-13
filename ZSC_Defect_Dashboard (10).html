@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZSC | Defect Summary Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --orange:#F6921E;
+    --orange-deep:#D9740A;
+    --ink:#1C1C24;
+    --ink-soft:#4A4A55;
+    --paper:#FAFAF9;
+    --line:#E9E7E2;
+    --card:#FFFFFF;
+    --ok:#1F9D55;
+    --open:#E2483D;
+    --hold:#F2B705;
+    --muted:#8A8A94;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  a{color:inherit;text-decoration:none;}
+
+  /* ===== Header ===== */
+  header.topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 40px;background:#fff;border-bottom:1px solid var(--line);
+    position:sticky;top:0;z-index:50;
+  }
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-bars{display:flex;align-items:flex-end;gap:2px;height:26px;}
+  .brand-bars span{width:4px;background:linear-gradient(180deg,var(--orange),var(--orange-deep));border-radius:2px;}
+  .brand-bars span:nth-child(1){height:40%;} .brand-bars span:nth-child(2){height:65%;}
+  .brand-bars span:nth-child(3){height:100%;} .brand-bars span:nth-child(4){height:55%;}
+  .brand-bars span:nth-child(5){height:80%;} .brand-bars span:nth-child(6){height:35%;}
+  .brand-text{line-height:1.05;}
+  .brand-text .l1{font-weight:800;font-size:14px;letter-spacing:0.5px;}
+  .brand-text .l2{font-size:9px;letter-spacing:2px;color:var(--muted);font-weight:600;}
+  nav.mainnav{display:flex;gap:32px;font-weight:700;font-size:13px;letter-spacing:0.5px;text-transform:uppercase;font-style:italic;}
+  nav.mainnav a{opacity:.85;transition:opacity .15s;}
+  nav.mainnav a:hover{opacity:1;color:var(--orange-deep);}
+
+  /* ===== Compact header upload widget ===== */
+  .header-upload{display:flex;align-items:center;gap:6px;position:relative;flex:0 0 auto;}
+  .icon-btn{
+    width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:#fff;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-soft);
+    transition:border-color .15s,color .15s,background .15s;flex:0 0 auto;
+  }
+  .icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+  .icon-btn:hover{border-color:var(--orange-deep);color:var(--orange-deep);background:#FFF8EF;}
+  .icon-btn.danger:hover{border-color:var(--open);color:var(--open);background:#FDF1F0;}
+  .icon-btn.primary{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .icon-btn.primary:hover{background:var(--orange-deep);border-color:var(--orange-deep);color:#fff;}
+  #headerFileInput{display:none;}
+  .header-toast{
+    position:absolute;top:calc(100% + 8px);right:0;z-index:60;
+    background:var(--ink);color:#fff;font-size:11.5px;font-weight:600;line-height:1.4;
+    padding:9px 13px;border-radius:8px;max-width:260px;box-shadow:0 8px 20px rgba(20,20,25,.18);
+    opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .18s,transform .18s;
+  }
+  .header-toast.show{opacity:1;transform:translateY(0);}
+  .header-toast.err{background:var(--open);}
+  .header-toast.ok{background:var(--ok);}
+  @media(max-width:900px){ .header-upload{gap:4px;} .icon-btn{width:27px;height:27px;} }
+
+  /* ===== Hero ===== */
+  .hero{padding:52px 40px 36px;text-align:center;}
+  .hero .eyebrow{font-weight:800;font-size:22px;font-style:italic;letter-spacing:1px;text-transform:uppercase;}
+  .hero .title{
+    font-family:'Archivo Black',sans-serif;font-size:clamp(24px, 4vw, 40px);text-transform:uppercase;font-style:italic;
+    color:transparent;-webkit-text-stroke:1.2px var(--ink);letter-spacing:.5px;line-height:1.15;margin:2px 0 16px;
+    opacity:.9;
+  }
+  .hero p{max-width:760px;margin:0 auto;color:var(--ink-soft);font-size:14px;line-height:1.6;}
+
+  /* ===== KPI strip ===== */
+  .kpi-strip{
+    background:linear-gradient(90deg,var(--orange),var(--orange-deep));
+    display:flex;overflow-x:auto;padding:0 20px;
+  }
+  .kpi{
+    flex:1 0 150px;text-align:center;padding:20px 10px;color:#fff;
+    border-right:1px solid rgba(255,255,255,.25);
+  }
+  .kpi:last-child{border-right:none;}
+  .kpi .num{font-family:'Archivo Black',sans-serif;font-size:30px;font-style:italic;}
+  .kpi .lbl{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.92;}
+
+  /* ===== Layout ===== */
+  main{max-width:1280px;margin:0 auto;padding:36px 40px 80px;}
+  .section-head{display:flex;align-items:baseline;gap:10px;margin:0 0 18px;}
+  .section-head h2{
+    font-family:'Archivo Black',sans-serif;font-style:italic;text-transform:uppercase;font-size:22px;margin:0;
+  }
+  .section-head .accent{color:var(--orange);}
+  .section-head .sub{color:var(--muted);font-size:12.5px;font-weight:600;}
+
+  .grid-2{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;margin-bottom:34px;}
+  .grid-asym{display:grid;grid-template-columns:1.55fr 1fr;gap:22px;margin-bottom:34px;align-items:stretch;}
+  @media(max-width:900px){ .grid-asym{grid-template-columns:1fr;} }
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:24px;box-shadow:0 1px 2px rgba(20,20,25,.03);
+  }
+  .card h3{margin:0 0 16px;font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:800;color:var(--ink);}
+  .chart-wrap{position:relative;height:260px;}
+
+  /* ===== Upload card ===== */
+  .upload-card{
+    border:2px dashed var(--orange);background:#FFF8EF;border-radius:var(--radius);
+    padding:26px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:34px;
+  }
+  .upload-card .txt strong{display:block;font-size:15px;margin-bottom:4px;}
+  .upload-card .txt span{font-size:12.5px;color:var(--ink-soft);}
+  .btn{
+    border:none;cursor:pointer;font-weight:800;font-size:12.5px;text-transform:uppercase;letter-spacing:.6px;
+    padding:12px 22px;border-radius:30px;background:var(--ink);color:#fff;transition:transform .12s, background .15s;
+  }
+  .btn:hover{background:var(--orange-deep);transform:translateY(-1px);}
+  .btn.secondary{background:#fff;color:var(--ink);border:1.5px solid var(--ink);}
+  .btn.secondary:hover{background:var(--ink);color:#fff;}
+  .btn.danger{background:#fff;color:var(--open);border:1.5px solid var(--open);}
+  .btn.danger:hover{background:var(--open);color:#fff;}
+  .empty-state{padding:60px 20px;text-align:center;color:var(--muted);font-size:13px;font-weight:600;}
+  #fileInput{display:none;}
+  .upload-msg{font-size:12px;font-weight:700;margin-top:8px;}
+  .upload-msg.ok{color:var(--ok);}
+  .upload-msg.err{color:var(--open);}
+
+  /* ===== Table ===== */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{
+    text-align:left;background:var(--ink);color:#fff;padding:12px 14px;font-size:11px;
+    text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;
+  }
+  thead th:first-child{border-radius:8px 0 0 0;}
+  thead th:last-child{border-radius:0 8px 0 0;}
+  tbody td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:top;}
+  tbody tr:hover{background:#FFF8EF;}
+  .pill{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:#fff;}
+  .pill.Fixed,.pill.Closed{background:var(--ok);}
+  .pill.Open{background:var(--open);}
+  .pill.OnHold,.pill.On.Hold{background:var(--hold);color:#33291a;}
+  .pill.default{background:var(--muted);}
+  .sev-High{color:var(--open);font-weight:800;}
+  .sev-Medium{color:var(--hold);font-weight:800;}
+  .sev-Low{color:var(--ok);font-weight:800;}
+
+  .filters{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:16px;align-items:flex-end;}
+  .filter-group{display:flex;flex-direction:column;gap:6px;}
+  .filter-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--ink-soft);}
+  .filters input[type="text"]{
+    padding:10px 14px;border-radius:8px;border:1.5px solid var(--line);font-family:inherit;font-size:12.5px;font-weight:600;background:#fff;
+    min-width:220px;
+  }
+
+  /* Multi-select dropdown */
+  .multiselect{position:relative;}
+  .ms-btn{
+    display:flex;align-items:center;gap:10px;justify-content:space-between;
+    padding:10px 14px;border-radius:8px;border:1.5px solid var(--line);background:#fff;
+    font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;width:220px;color:var(--ink);
+  }
+  .ms-btn-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-btn:hover{border-color:var(--orange);}
+  .ms-btn.active-filter{border-color:var(--orange-deep);background:#FFF8EF;}
+  .ms-arrow{font-size:10px;color:var(--muted);transition:transform .15s;}
+  .multiselect.open .ms-arrow{transform:rotate(180deg);}
+  .ms-panel{
+    display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:40;
+    background:#fff;border:1.5px solid var(--line);border-radius:10px;
+    width:240px;max-height:260px;overflow-y:auto;box-shadow:0 8px 24px rgba(20,20,25,.12);padding:8px;
+  }
+  .multiselect.open .ms-panel{display:block;}
+  .ms-option{
+    display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;
+  }
+  .ms-option:hover{background:var(--paper);}
+  .ms-option input{
+    flex:0 0 14px;width:14px;height:14px;margin:0;accent-color:var(--orange-deep);cursor:pointer;
+  }
+  .ms-option span{flex:1;}
+  .ms-footer{display:flex;justify-content:space-between;padding:8px 8px 2px;border-top:1px solid var(--line);margin-top:4px;}
+  .ms-clear{background:none;border:none;color:var(--open);font-size:11px;font-weight:800;cursor:pointer;text-transform:uppercase;letter-spacing:.4px;}
+  .ms-clear:hover{text-decoration:underline;}
+
+  .assignee-total{font-weight:800;}
+
+  /* ===== Assignee table \u2014 sober, bordered ===== */
+  .table-card{padding:0;}
+  #assigneeTable{border-collapse:collapse;width:100%;font-size:12.5px;}
+  #assigneeTable thead th{padding:11px 14px;font-size:10.5px;}
+  #assigneeTable tbody td{padding:9px 14px;}
+  #assigneeTable th, #assigneeTable td{border:1px solid var(--line);}
+  #assigneeTable thead th{border-color:#33333c;}
+  #assigneeTable tbody tr:hover{background:var(--paper);}
+  .count-plain{font-weight:800;}
+  .count-zero{color:#C9C7C2;font-weight:600;}
+  .num-cell{text-align:center;font-weight:700;}
+
+  footer{text-align:center;padding:30px;color:var(--muted);font-size:11.5px;border-top:1px solid var(--line);}
+
+  @media(max-width:900px){
+    .grid-2{grid-template-columns:1fr;}
+    nav.mainnav{display:none;}
+    .hero .title{font-size:clamp(20px, 7vw, 30px);}
+    .hero .eyebrow{font-size:18px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-bars"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="brand-text">
+      <div class="l1">ZAYED SPORTS CITY</div>
+      <div class="l2">QA &amp; DEFECT TRACKING</div>
+    </div>
+  </div>
+  <nav class="mainnav">
+    <a href="#assignee">By Assignee</a>
+    <a href="#defects">All Defects</a>
+  </nav>
+  <div class="header-upload">
+    <button type="button" class="icon-btn primary" title="Upload Excel (.xlsx)" onclick="document.getElementById('headerFileInput').click()">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4M12 4l-5 5M12 4l5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+    </button>
+    <button type="button" class="icon-btn" title="Reset to Sample Data" onclick="loadSample()">
+      <svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <button type="button" class="icon-btn danger" title="Clear Data" onclick="clearData()">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </button>
+    <input type="file" id="headerFileInput" accept=".xlsx,.xls" />
+    <div id="uploadMsg" class="header-toast"></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Welcome to</div>
+  <div class="title">Defect Summary Dashboard</div>
+  <p>A live view of QA defects logged across the ZSC platform &mdash; status, severity, and ownership at a glance.
+     Upload a fresh tracker export at any time and the entire dashboard repopulates automatically.</p>
+</section>
+
+<div class="kpi-strip" id="kpiStrip"></div>
+
+<main>
+
+  <section id="assignee">
+    <div class="section-head"><h2>Summary by <span class="accent">Assignee</span></h2><span class="sub">Open vs Closed (and every status in between) per person</span></div>
+    <div class="grid-asym">
+      <div class="card table-card">
+        <div class="table-wrap">
+          <table id="assigneeTable"></table>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Defects by Status</h3>
+        <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="defects">
+    <div class="section-head"><h2>All <span class="accent">Defects</span></h2><span class="sub"><span id="defectCount"></span> records</span></div>
+    <div class="filters">
+      <div class="filter-group">
+        <label class="filter-label" for="searchBox">Search</label>
+        <input type="text" id="searchBox" placeholder="Search title or defect ID...">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <div class="multiselect" id="statusFilterMS">
+          <button type="button" class="ms-btn" onclick="toggleMS('statusFilterMS')">
+            <span class="ms-btn-label">All Statuses</span><span class="ms-arrow">&#9662;</span>
+          </button>
+          <div class="ms-panel"></div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Assigned To</label>
+        <div class="multiselect" id="assigneeFilterMS">
+          <button type="button" class="ms-btn" onclick="toggleMS('assigneeFilterMS')">
+            <span class="ms-btn-label">All Assignees</span><span class="ms-arrow">&#9662;</span>
+          </button>
+          <div class="ms-panel"></div>
+        </div>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Severity</label>
+        <div class="multiselect" id="severityFilterMS">
+          <button type="button" class="ms-btn" onclick="toggleMS('severityFilterMS')">
+            <span class="ms-btn-label">All Severities</span><span class="ms-arrow">&#9662;</span>
+          </button>
+          <div class="ms-panel"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="padding:0;">
+      <div class="table-wrap">
+        <table id="defectTable">
+          <thead>
+            <tr>
+              <th>Defect ID</th><th>Title</th><th>Type</th><th>Assigned To</th>
+              <th>Reported</th><th>Fixed</th><th>Severity</th><th>Priority</th><th>Status</th><th>Env</th>
+            </tr>
+          </thead>
+          <tbody id="defectTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Zayed Sports City &mdash; QA Defect Dashboard. Data is processed locally in your browser; nothing is uploaded to a server.</footer>
+
+<script>
+/* ===================== Sample / default dataset ===================== */
+const SAMPLE_DATA = [{"Defect ID": "WHAT'S_ON_01", "Title": "Location- White space is displaying at the top section.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh", "Date Reported": "2026-06-04", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "WHAT'S_ON_02", "Title": "Location- Login option is displaying in the header section but user is already logged in.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-06-04", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "WHAT'S_ON_03", "Title": "Location- Cart option is displaying in the header section but when user lands to Cart page, it's showing Your Cart is empty. Slots are already added to the Cart.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-06-04", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "WHAT'S_ON_04", "Title": "Stadium- Login option is displaying in the header section but user is already logged in.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-06-04", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "WHAT'S_ON_05", "Title": "Stadium- Cart option is displaying in the header section but when user lands to Cart page, it's showing Your Cart is empty. Slots are already added to the Cart.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-06-04", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_01", "Title": "In Cart Page- Hypen (-) is displaying in between each word of a name. \"Volleyball-Court-2a\"", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-06-04", "Date Fixed": "2026-06-05", "Severity": "Low", "Priority": "Low", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "BOOKING_01", "Title": "In Booking Page- Hypen (-) is displaying in between each word of a name. \"Volleyball-Court-2a\"", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-06-04", "Date Fixed": "2026-06-05", "Severity": "Low", "Priority": "Low", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_01", "Title": "Name is not coming in full- While adding to cart if name is Velleyball-halfpitch-Aa1 and Volleyball-halfpitch-Aa2, then in the cart it's showing as Volleyball-halfpitch-Aa and Volleyball-Aa.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-06-04", "Date Fixed": "2026-06-05", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_02", "Title": "I added several slots to the cart using the Mobile App. After adding them, the slots were correctly displayed on the Cart page.\n\nLater, I logged in with the same user account on the Web Browser and navigated to the Cart page. However, the slots that were added through the Mobile App were not displayed in the cart.\n\nThe same issue occurs in the reverse scenario as well. When slots are added through the Web Browser, they are visible in the web cart, but they do not appear in the Mobile App cart for the same user account.\n ", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Haitham", "Date Reported": "2026-06-05", "Date Fixed": "", "Severity": "High", "Priority": "High", "Status": "On Hold", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_03", "Title": "I added 3 different slots to the cart and proceeded to the payment page. While on the payment page, I realized that I had forgotten to add 2 more slots.\n\nI cancelled the payment process and navigated back to the cart page. The previously added 3 slots were still present in the cart.\n\nI then added the 2 missing slots to the cart. However, after adding them, the original 3 slots were automatically removed from the cart, and only the newly added 2 slots were displayed.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Haitham", "Date Reported": "2026-06-05", "Date Fixed": "", "Severity": "High", "Priority": "High", "Status": "On Hold", "Environment": "UAT", "Comments": ""}, {"Defect ID": "HOME_01", "Title": "Arabic Translation is not working for full application.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Vinit", "Date Reported": "2026-06-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "On Hold", "Environment": "UAT", "Comments": ""}, {"Defect ID": "FAQ_01", "Title": "FAQ- White space is displaying at the top section.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh", "Date Reported": "2026-06-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "ABOUT_US_01", "Title": "Abous Us- Register Now- Participant Gender and Current Skill Level dropdown icons are not aligned with the dropdown box.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": "https://uzsc.zsc.ae/en/w/zsc-ice-rink-summer-kids-camp-1"}, {"Defect ID": "ABOUT_US_02", "Title": "About Us page- On scrolling page is moving left and right.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": "https://www.zsc.ae/en/about-zsc"}, {"Defect ID": "ABOUT_US_03", "Title": "End lines are not displaying in Table.\n\nAbout Us > Register Now > ZSC Tennis Programmes/ Ice Skating Programmes > More Details", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Harsh Verma", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": "https://uzsc.zsc.ae/en/w/zsc-ice-rink-summer-kids-camp-1"}, {"Defect ID": "CART_04", "Title": "User added slots to the Cart and proceed to Payment page. \nWhile filling all the payment details and click on Pay button and that time internet got disabled. Then in that case payment is not getting failed and page keeps on loading. ", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-06-04", "Date Fixed": "2026-06-05", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_05", "Title": "User added slots to the Cart and proceed to Payment page. \nWhile filling all the payment details and click on Pay button and that time internet got disabled. Payment got failed and user redirected to failed payment page. Then he tried again for the payment then in that case payment getting failed with Error message - \"Duplicate Order id\"", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "On Hold", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_06", "Title": "User added slots to the Cart and proceed to Payment page. \nWhile filling all the payment details and click on Pay button and that time internet got disabled. Payment got failed and user redirected to failed payment page. Then he tried again for the payment, if internet is disabled then user should get the error message that internet is not available.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-06-04", "Date Fixed": "2026-06-05", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "FOOTER_01", "Title": "Footer- Privacy Policy and Terms & Conditions links are redirecting to Homepage.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Harsh", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CHANGE_PASSWORD", "Title": "Change Password- On giving Old Password and New Password and clicking on Submit the page keeps on loading.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-08-05", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "MY_BOOKINGS_01", "Title": "In My Booking page- Add ons and Recommendation should not have Time field.\nPlease remove the time field from the Add-ons and Recommendations.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-07-29", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "MY_BOOKINGS_02", "Title": "In My Booking page- Add ons and Recommendation should be highlighted.\nIt's displaying in My Cart and Checkout page.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Mridul", "Date Reported": "2026-07-29", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Open", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_07", "Title": "In Cart Page- When we are adding Add-ons and Recommendations then it should be displayed into specific slots in which its added.\nCurrently quantity is getting increased and its not displaying under specific time slots.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Haitham", "Date Reported": "2026-07-29", "Date Fixed": "", "Severity": "High", "Priority": "High", "Status": "Open", "Environment": "UAT", "Comments": ""}, {"Defect ID": "SHARE_TICKETS", "Title": "Share Ticket functionality is not working properly.\n- When we are sharing tickets and previous ticket is already in the share ticket list then its overlapping the previous ticket with the current one.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Mridul", "Date Reported": "2026-07-29", "Date Fixed": "", "Severity": "High", "Priority": "High", "Status": "Open", "Environment": "UAT", "Comments": ""}, {"Defect ID": "MY_BOOKINGS_02", "Title": "In My Booking page- Download Tickets- Add ons and Recommendations are not displaying in the tickets.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Arzoo", "Date Reported": "2026-07-29", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Open", "Environment": "UAT", "Comments": ""}, {"Defect ID": "PAYMENT_CONFIRMATION_01", "Title": "In Payment Confirmation page- Product Name is coming with hypen like : tennis-gear.\nIt should display like Tennis Gear.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-07-30", "Date Fixed": "", "Severity": "Low", "Priority": "Low", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_08", "Title": "In Cart Page- 2 Order Summary sections are displaying. Please remove one of them - Middle one.", "Type": "UI", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-07-30", "Date Fixed": "", "Severity": "Low", "Priority": "Low", "Status": "Fixed", "Environment": "UAT", "Comments": ""}, {"Defect ID": "CART_09", "Title": "In Cart Page- In Order Summary section- If discount is applied then please do not add discount on the Subtotal price as Below to VAT discount is already displaying. Discount should be added on the Final Price.", "Type": "FUNCTIONAL", "Reported By": "Vinit", "Assigned To": "Rajat", "Date Reported": "2026-07-30", "Date Fixed": "", "Severity": "Medium", "Priority": "Medium", "Status": "Fixed", "Environment": "UAT", "Comments": ""}];
+
+let allRows = [];
+let statusChartRef;
+
+const STATUS_COLORS = {
+  'Fixed':'#1F9D55', 'Closed':'#1F9D55',
+  'Open':'#E2483D',
+  'On Hold':'#F2B705',
+};
+const FALLBACK_COLORS = ['#8A8A94','#F6921E','#4A4A55','#7C6EF6','#2AA9C4'];
+function colorForStatus(status, idx){
+  return STATUS_COLORS[status] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
+}
+
+function norm(v){ return (v===undefined || v===null) ? '' : String(v).trim(); }
+
+function getKey(row, candidates){
+  for(const c of candidates){
+    if(row.hasOwnProperty(c)) return row[c];
+  }
+  // case-insensitive fallback
+  const lower = Object.keys(row).reduce((m,k)=>{m[k.toLowerCase()]=k; return m;},{});
+  for(const c of candidates){
+    const hit = lower[c.toLowerCase()];
+    if(hit) return row[hit];
+  }
+  return '';
+}
+
+function normalizeRows(rawRows){
+  return rawRows.map(r => ({
+    id: norm(getKey(r,['Defect ID','ID'])),
+    title: norm(getKey(r,['Title','Description'])),
+    type: norm(getKey(r,['Type'])),
+    reportedBy: norm(getKey(r,['Reported By'])),
+    assignedTo: norm(getKey(r,['Assigned To'])) || 'Unassigned',
+    dateReported: norm(getKey(r,['Date Reported'])),
+    dateFixed: norm(getKey(r,['Date Fixed'])),
+    severity: norm(getKey(r,['Severity'])) || 'Unspecified',
+    priority: norm(getKey(r,['Priority'])),
+    status: norm(getKey(r,['Status'])) || 'Unspecified',
+    environment: norm(getKey(r,['Environment'])),
+    comments: norm(getKey(r,['Comments'])),
+  })).filter(r => r.id || r.title);
+}
+
+/* ===================== Rendering ===================== */
+function render(){
+  renderKPIs();
+  renderStatusChart();
+  renderAssigneeSection();
+  populateFilters();
+  renderDefectTable();
+}
+
+function renderKPIs(){
+  const total = allRows.length;
+  const openLike = ['Open','On Hold','Unspecified'];
+  const openCount = allRows.filter(r=>openLike.includes(r.status)).length;
+  const closedCount = allRows.filter(r=>['Fixed','Closed'].includes(r.status)).length;
+
+  const kpis = [
+    {num:total, lbl:'Total Defects'},
+    {num:openCount, lbl:'Open / In Progress'},
+    {num:closedCount, lbl:'Fixed / Closed'},
+  ];
+  document.getElementById('kpiStrip').innerHTML = kpis.map(k=>
+    `<div class="kpi"><div class="num">${k.num}</div><div class="lbl">${k.lbl}</div></div>`
+  ).join('');
+}
+
+function groupCount(rows, keyFn){
+  const m = {};
+  rows.forEach(r=>{ const k = keyFn(r) || 'Unspecified'; m[k]=(m[k]||0)+1; });
+  return m;
+}
+
+function renderStatusChart(){
+  if(statusChartRef) statusChartRef.destroy();
+  if(allRows.length === 0){
+    document.getElementById('statusChart').replaceWith(emptyCanvas('statusChart'));
+    return;
+  }
+  restoreCanvas('statusChart');
+  const counts = groupCount(allRows, r=>r.status);
+  const labels = Object.keys(counts);
+  const data = Object.values(counts);
+  const colors = labels.map((l,i)=>colorForStatus(l,i));
+  statusChartRef = new Chart(document.getElementById('statusChart'), {
+    type:'doughnut',
+    data:{labels, datasets:[{data, backgroundColor:colors, borderWidth:2, borderColor:'#fff'}]},
+    options:{plugins:{legend:{position:'bottom', labels:{font:{family:'Inter',weight:'600'}, boxWidth:12, padding:14}}}, cutout:'62%'}
+  });
+}
+
+function emptyCanvas(id){
+  const div = document.createElement('div');
+  div.className = 'chart-wrap';
+  div.id = id + 'Empty';
+  div.innerHTML = `<div class="empty-state">No data loaded.<br>Upload an Excel file or reset to sample data.</div>`;
+  return div;
+}
+function restoreCanvas(id){
+  const existing = document.getElementById(id);
+  if(existing) return; // canvas already present
+  const placeholder = document.getElementById(id + 'Empty');
+  if(placeholder){
+    const canvas = document.createElement('canvas');
+    canvas.id = id;
+    placeholder.replaceWith(canvas);
+  }
+}
+
+function renderAssigneeSection(){
+  if(allRows.length === 0){
+    document.getElementById('assigneeTable').innerHTML = '';
+    return;
+  }
+  let assignees = [...new Set(allRows.map(r=>r.assignedTo))];
+  const statuses = [...new Set(allRows.map(r=>r.status))];
+  // keep a sensible order: Open, On Hold, Fixed, then others
+  const order = ['Open','On Hold','Fixed','Closed'];
+  statuses.sort((a,b)=>{
+    const ai = order.indexOf(a), bi = order.indexOf(b);
+    if(ai===-1 && bi===-1) return a.localeCompare(b);
+    if(ai===-1) return 1;
+    if(bi===-1) return -1;
+    return ai-bi;
+  });
+  // sort assignees by total defect count, busiest first
+  assignees.sort((a,b)=>{
+    const ta = allRows.filter(r=>r.assignedTo===a).length;
+    const tb = allRows.filter(r=>r.assignedTo===b).length;
+    return tb - ta || a.localeCompare(b);
+  });
+
+  // matrix table
+  const thead = `<thead><tr><th>Assigned To</th>${statuses.map(s=>`<th>${s}</th>`).join('')}<th>Total</th></tr></thead>`;
+  const rowsHtml = assignees.map(person=>{
+    const rows = allRows.filter(r=>r.assignedTo===person);
+    const total = rows.length;
+    const cells = statuses.map((s,i)=>{
+      const c = rows.filter(r=>r.status===s).length;
+      if(!c) return `<td class="num-cell"><span class="count-zero">&ndash;</span></td>`;
+      const col = colorForStatus(s,i);
+      return `<td class="num-cell"><span class="count-plain" style="color:${col};">${c}</span></td>`;
+    }).join('');
+    return `<tr><td><strong>${person}</strong></td>${cells}<td class="num-cell assignee-total">${total}</td></tr>`;
+  }).join('');
+  document.getElementById('assigneeTable').innerHTML = thead + `<tbody>${rowsHtml}</tbody>`;
+}
+
+/* ===================== Multi-select filters ===================== */
+const selectedStatuses = new Set();
+const selectedAssignees = new Set();
+const selectedSeverities = new Set();
+
+const MS_CONFIG = {
+  statusFilterMS:   {selected: selectedStatuses,   defaultLabel: 'All Statuses',   singularLabel: 'Statuses'},
+  assigneeFilterMS: {selected: selectedAssignees,  defaultLabel: 'All Assignees',  singularLabel: 'Assignees'},
+  severityFilterMS: {selected: selectedSeverities, defaultLabel: 'All Severities', singularLabel: 'Severities'},
+};
+
+function populateFilters(){
+  selectedStatuses.clear(); selectedAssignees.clear(); selectedSeverities.clear();
+  fillMultiselect('statusFilterMS',   [...new Set(allRows.map(r=>r.status))].sort());
+  fillMultiselect('assigneeFilterMS', [...new Set(allRows.map(r=>r.assignedTo))].sort());
+  fillMultiselect('severityFilterMS', [...new Set(allRows.map(r=>r.severity))].sort());
+}
+
+function fillMultiselect(msId, values){
+  const cfg = MS_CONFIG[msId];
+  const panel = document.querySelector('#'+msId+' .ms-panel');
+  const optionsHtml = values.map(v=>`
+    <label class="ms-option"><input type="checkbox" value="${v}"><span>${v}</span></label>
+  `).join('');
+  panel.innerHTML = optionsHtml + `
+    <div class="ms-footer">
+      <button type="button" class="ms-clear" onclick="clearMS('${msId}')">Clear</button>
+    </div>`;
+  panel.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      if(cb.checked) cfg.selected.add(cb.value); else cfg.selected.delete(cb.value);
+      updateMSLabel(msId);
+      renderDefectTable();
+    });
+  });
+  updateMSLabel(msId);
+}
+
+function updateMSLabel(msId){
+  const cfg = MS_CONFIG[msId];
+  const btn = document.querySelector('#'+msId+' .ms-btn');
+  const label = document.querySelector('#'+msId+' .ms-btn-label');
+  const n = cfg.selected.size;
+  if(n === 0){
+    label.textContent = cfg.defaultLabel;
+    btn.classList.remove('active-filter');
+  } else if(n <= 2){
+    label.textContent = [...cfg.selected].join(', ');
+    btn.classList.add('active-filter');
+  } else {
+    label.textContent = `${n} ${cfg.singularLabel} selected`;
+    btn.classList.add('active-filter');
+  }
+}
+
+function clearMS(msId){
+  const cfg = MS_CONFIG[msId];
+  cfg.selected.clear();
+  document.querySelectorAll('#'+msId+' .ms-panel input[type=checkbox]').forEach(cb=>cb.checked=false);
+  updateMSLabel(msId);
+  renderDefectTable();
+}
+
+function toggleMS(msId){
+  const el = document.getElementById(msId);
+  const willOpen = !el.classList.contains('open');
+  document.querySelectorAll('.multiselect.open').forEach(m=>m.classList.remove('open'));
+  if(willOpen) el.classList.add('open');
+}
+document.addEventListener('click', function(e){
+  if(!e.target.closest('.multiselect')){
+    document.querySelectorAll('.multiselect.open').forEach(m=>m.classList.remove('open'));
+  }
+});
+
+function pillClass(status){
+  if(['Fixed','Closed'].includes(status)) return 'Fixed';
+  if(status==='Open') return 'Open';
+  if(status==='On Hold') return 'OnHold';
+  return 'default';
+}
+
+function renderDefectTable(){
+  const search = document.getElementById('searchBox').value.toLowerCase();
+
+  const filtered = allRows.filter(r=>{
+    if(selectedStatuses.size && !selectedStatuses.has(r.status)) return false;
+    if(selectedAssignees.size && !selectedAssignees.has(r.assignedTo)) return false;
+    if(selectedSeverities.size && !selectedSeverities.has(r.severity)) return false;
+    if(search && !(r.title.toLowerCase().includes(search) || r.id.toLowerCase().includes(search))) return false;
+    return true;
+  });
+
+  document.getElementById('defectCount').textContent = filtered.length;
+  if(allRows.length === 0){
+    document.getElementById('defectTbody').innerHTML = `<tr><td colspan="10" class="empty-state">No data loaded. Upload an Excel file or reset to sample data.</td></tr>`;
+    return;
+  }
+  document.getElementById('defectTbody').innerHTML = filtered.map(r=>`
+    <tr>
+      <td><strong>${r.id}</strong></td>
+      <td>${r.title}</td>
+      <td>${r.type}</td>
+      <td>${r.assignedTo}</td>
+      <td>${r.dateReported}</td>
+      <td>${r.dateFixed || '&ndash;'}</td>
+      <td class="sev-${r.severity}">${r.severity}</td>
+      <td>${r.priority}</td>
+      <td><span class="pill ${pillClass(r.status)}">${r.status}</span></td>
+      <td>${r.environment}</td>
+    </tr>
+  `).join('');
+}
+
+document.getElementById('searchBox').addEventListener('input', renderDefectTable);
+
+/* ===================== Upload handling ===================== */
+let toastTimer;
+function showToast(text, type){
+  const msg = document.getElementById('uploadMsg');
+  clearTimeout(toastTimer);
+  msg.className = 'header-toast show' + (type ? ' '+type : '');
+  msg.textContent = text;
+  toastTimer = setTimeout(()=>{ msg.classList.remove('show'); }, 4000);
+}
+
+document.getElementById('headerFileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  showToast('Reading file...');
+
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    try{
+      const wb = XLSX.read(evt.target.result, {type:'array'});
+      const sheetName = wb.SheetNames.find(n => /defect/i.test(n)) || wb.SheetNames[0];
+      const sheet = wb.Sheets[sheetName];
+      const json = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      const normalized = normalizeRows(json);
+      if(normalized.length === 0){
+        showToast('No recognizable defect rows found. Check the column headers match the template.', 'err');
+        return;
+      }
+      allRows = normalized;
+      render();
+      showToast(`Loaded ${normalized.length} defects from "${file.name}".`, 'ok');
+    }catch(err){
+      showToast('Could not read that file. Please upload a valid .xlsx export.', 'err');
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+function loadSample(){
+  allRows = normalizeRows(SAMPLE_DATA);
+  render();
+  showToast('Sample tracker data loaded.', 'ok');
+  document.getElementById('headerFileInput').value = '';
+}
+
+function clearData(){
+  if(allRows.length && !confirm('Clear all defect data from the dashboard? This only affects what is shown here — your Excel file is untouched.')) return;
+  allRows = [];
+  render();
+  showToast('Dashboard cleared. Upload an Excel file or reset to sample data to repopulate.');
+  document.getElementById('headerFileInput').value = '';
+}
+
+/* ===================== Init ===================== */
+render();
+</script>
+</body>
+</html>
