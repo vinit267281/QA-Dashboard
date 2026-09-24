@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Final Workspace Mobile APP — Dashboard</title>
+<style>
+  :root {
+    --navy: #1f3864;
+    --navy-light: #2e5395;
+    --blue-bg: #eef3fa;
+    --green: #1e8e3e;
+    --green-bg: #e6f4ea;
+    --amber: #b06000;
+    --amber-bg: #fff3e0;
+    --amber-border: #f0c36d;
+    --grey: #5f6368;
+    --card-bg: #ffffff;
+    --page-bg: #f4f6fa;
+    --border: #e1e5ee;
+    --text: #1c1f27;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --navy: #7fa3e0; --navy-light: #9fbbe8; --blue-bg: #1a2740;
+      --green: #6fcf8e; --green-bg: #10321f;
+      --amber: #f0b95b; --amber-bg: #3a2b10; --amber-border: #6b4f1e;
+      --grey: #a9b1c3; --card-bg: #1a1d29; --page-bg: #121420;
+      --border: #2b2f42; --text: #e8eaf2;
+    }
+  }
+  :root[data-theme="dark"] {
+    --navy: #7fa3e0; --navy-light: #9fbbe8; --blue-bg: #1a2740;
+    --green: #6fcf8e; --green-bg: #10321f;
+    --amber: #f0b95b; --amber-bg: #3a2b10; --amber-border: #6b4f1e;
+    --grey: #a9b1c3; --card-bg: #1a1d29; --page-bg: #121420;
+    --border: #2b2f42; --text: #e8eaf2;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page-bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  .header {
+    background: linear-gradient(135deg, var(--navy), var(--navy-light));
+    color: #ffffff; border-radius: 14px; padding: 28px 30px; margin-bottom: 22px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;
+  }
+  .header h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; }
+  .header p { margin: 0; opacity: 0.9; font-size: 14px; }
+  .status-chip {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 999px; padding: 8px 18px; font-weight: 700; font-size: 14px; white-space: nowrap;
+  }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+  @media (max-width: 700px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; text-align: center; }
+  .kpi-value { font-size: 30px; font-weight: 800; color: var(--navy); }
+  .kpi-label { font-size: 12.5px; color: var(--grey); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .kpi-card.green .kpi-value { color: var(--green); }
+  .kpi-card.amber .kpi-value { color: var(--amber); }
+
+  .section { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 22px; }
+  .section h2 { margin: 0 0 16px; font-size: 18px; color: var(--navy); border-bottom: 2px solid var(--border); padding-bottom: 10px; }
+  .section > p.intro { margin-top: -6px; margin-bottom: 16px; font-size: 14px; color: var(--grey); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--grey); font-size: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  tr:last-child td { border-bottom: none; }
+  .pass-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--green-bg); color: var(--green); font-weight: 700; font-size: 12.5px;
+    padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+  }
+
+  /* meta table */
+  .meta-table td:first-child { width: 210px; font-weight: 700; color: var(--navy); background: var(--blue-bg); }
+  .meta-table ul { margin: 0; padding-left: 18px; }
+  .meta-table li { margin-bottom: 4px; }
+
+  /* exec summary bullets */
+  .exec-list { margin: 0; padding-left: 20px; font-size: 14.5px; }
+  .exec-list li { margin-bottom: 8px; }
+
+  /* bar chart */
+  .bar-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; }
+  .bar-label { flex: 0 0 240px; font-size: 13.5px; }
+  .bar-track { flex: 1; background: var(--blue-bg); border-radius: 6px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--navy-light), var(--navy)); border-radius: 6px; }
+  .bar-value { flex: 0 0 30px; text-align: right; font-size: 13px; font-weight: 700; color: var(--navy); }
+
+  /* scenario accordions */
+  details.scenario {
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; overflow: hidden;
+  }
+  details.scenario > summary {
+    list-style: none; cursor: pointer; padding: 13px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    background: var(--blue-bg); font-weight: 700; font-size: 14.5px; color: var(--navy);
+  }
+  details.scenario > summary::-webkit-details-marker { display: none; }
+  details.scenario > summary .chev { transition: transform 0.15s ease; font-size: 12px; color: var(--grey); }
+  details.scenario[open] > summary .chev { transform: rotate(90deg); }
+  .scenario-body { padding: 16px 18px; }
+  .scenario-meta { font-size: 13.5px; color: var(--grey); margin-bottom: 10px; }
+  .scenario-meta b { color: var(--text); }
+  .sub-scenario { border-top: 1px dashed var(--border); padding-top: 12px; margin-top: 12px; }
+  .sub-scenario:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+  .sub-title { font-weight: 700; color: var(--navy); font-size: 14px; margin-bottom: 8px; }
+  .final-status { font-size: 14px; margin-top: 10px; }
+  .final-status b { color: var(--text); }
+
+  /* issues */
+  .issue-group-title { font-weight: 700; color: var(--amber); margin: 4px 0 12px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .issue-card { background: var(--amber-bg); border: 1px solid var(--amber-border); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; font-size: 14px; display: flex; gap: 12px; }
+  .issue-card.resolved-item, .resolved-row { opacity:.9; }
+  .resolved-badge { display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:var(--green-bg); color:var(--green); font-weight:700; font-size:11.5px; white-space:nowrap; }
+  .issue-num.done { background: var(--green); }
+  .open-badge { display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:var(--amber-bg); color:var(--amber); border:1px solid var(--amber-border); font-weight:700; font-size:11.5px; white-space:nowrap; }
+  .resolved-text { text-decoration:line-through; color:var(--grey); }
+  .issue-num { flex: 0 0 26px; height: 26px; border-radius: 50%; background: var(--amber); color: #fff; font-weight: 800; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+
+  /* module summary cards */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  @media (max-width: 800px) { .module-grid { grid-template-columns: repeat(2, 1fr); } }
+  .module-card {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--blue-bg); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; transition: border-color 0.15s ease;
+  }
+  .module-card:hover { border-color: var(--navy); }
+  .module-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .module-name { font-weight: 700; font-size: 14.5px; color: var(--navy); }
+  .mod-chip { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+  .mod-chip.pass { background: var(--green-bg); color: var(--green); }
+  .mod-chip.blocked { background: var(--amber-bg); color: var(--amber); }
+  .mod-chip.progress { background: var(--amber-bg); color: var(--amber); }
+  .module-stats { display: grid; grid-template-columns: repeat(3, 1fr); margin: 4px 0 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); }
+  .module-stats > div { padding: 8px 6px; text-align: center; }
+  .module-stats > div + div { border-left: 1px solid var(--border); }
+  .module-stats b { display: block; font-size: 18px; font-weight: 700; color: var(--text); line-height: 1.2; }
+  .module-stats span { display: block; margin-top: 2px; font-size: 10.5px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; color: var(--grey); line-height: 1.25; }
+  .module-stats .open b { color: var(--amber); }
+  .module-stats .closed b { color: var(--green); }
+  .module-note { font-size: 12.5px; color: var(--grey); }
+
+  /* module status table */
+  .status-table td:first-child { width: 190px; font-weight: 700; color: var(--navy); background: var(--blue-bg); }
+
+  .conclusion-text { font-size: 14.5px; }
+  .note { font-size: 13px; color: var(--grey); font-style: italic; margin-top: 10px; }
+  footer { text-align: center; font-size: 12.5px; color: var(--grey); margin-top: 10px; }
+
+  /* ===== Management polish ===== */
+  :root { --shadow: 0 1px 2px rgba(16,24,40,.06), 0 6px 18px rgba(16,24,40,.05); --red:#b3261e; }
+  html { scroll-behavior: smooth; scroll-padding-top: 64px; }
+  body { font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 15px; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 1120px; padding: 20px 24px 56px; }
+  .header { border-radius: 16px; padding: 34px 36px; background: linear-gradient(120deg, #14264a 0%, var(--navy-light) 100%); box-shadow: var(--shadow); }
+  .header h1 { font-size: 28px; letter-spacing: -0.01em; }
+  .header p { font-size: 14px; opacity: .85; }
+  .status-chip { background: rgba(255,255,255,.12); font-weight: 600; }
+  .topnav { position: sticky; top: 0; z-index: 10; display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 0; margin-bottom: 14px; background: var(--page-bg); }
+  .topnav a { text-decoration: none; color: var(--navy); font-size: 13px; font-weight: 600; padding: 6px 13px; border: 1px solid var(--border); border-radius: 999px; background: var(--card-bg); }
+  .topnav a:hover { border-color: var(--navy); background: var(--blue-bg); }
+  .section { border-radius: 10px; box-shadow: var(--shadow); padding: 24px 28px; }
+  .section h2 { font-size: 17px; border-bottom: 1px solid var(--border); padding-left: 12px; border-left: 4px solid var(--navy); border-radius: 2px; line-height: 1.3; }
+  h2[id^="module-"] { font-size: 21px !important; margin: 36px 2px 12px !important; padding-bottom: 8px; border-bottom: 2px solid var(--navy); }
+  th { text-transform: none; letter-spacing: 0; font-size: 12.5px; font-weight: 700; background: var(--blue-bg); }
+  th, td { padding: 11px 14px; }
+  .kpi-card { border-radius: 10px; box-shadow: var(--shadow); }
+  .kpi-label { text-transform: none; letter-spacing: 0; font-size: 13px; }
+  .module-card { border-radius: 10px; background: var(--card-bg); box-shadow: var(--shadow); }
+  .module-card:hover { border-color: var(--navy); }
+  .module-stats span { text-transform: none; letter-spacing: 0; font-size: 11.5px; }
+  .res-bar { height: 6px; border-radius: 3px; background: var(--amber-bg); overflow: hidden; margin: 2px 0 6px; }
+  .res-bar > i { display: block; height: 100%; background: var(--green); }
+  .res-label { font-size: 12px; color: var(--grey); margin-bottom: 8px; }
+  .issue-card { border-radius: 8px; }
+  details.scenario { border-radius: 8px; }
+
+  /* executive snapshot */
+  .snap { display: grid; grid-template-columns: 1.3fr 2fr; gap: 28px; align-items: center; }
+  .snap-big { font-size: 56px; font-weight: 800; color: var(--green); line-height: 1; letter-spacing: -0.02em; }
+  .snap-sub { font-size: 14px; color: var(--grey); margin-top: 6px; }
+  .seg { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--border); margin: 10px 0 8px; }
+  .seg i { display: block; height: 100%; }
+  .seg .g { background: var(--green); } .seg .a { background: #e8a33d; }
+  .legend { display: flex; gap: 18px; font-size: 13px; color: var(--grey); flex-wrap: wrap; }
+  .legend b { color: var(--text); }
+  .snap-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; }
+  .snap-stats div { border-left: 3px solid var(--border); padding-left: 10px; font-size: 12.5px; color: var(--grey); }
+  .snap-stats b { display: block; font-size: 22px; color: var(--navy); }
+  .mtag { font-weight: 700; color: var(--navy); white-space: nowrap; }
+  @media (max-width: 800px) { .snap { grid-template-columns: 1fr; } .snap-stats { grid-template-columns: repeat(2, 1fr); } .header { padding: 24px; } }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--navy-light); outline-offset: 2px; }
+  @media print {
+    body { background: #fff; } .topnav { display: none; } .header { box-shadow: none; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .section, .kpi-card, .module-card, details.scenario { box-shadow: none; break-inside: avoid; }
+  }
+
+  /* ===== Interactivity ===== */
+  .topnav a.active { background: var(--navy); color: var(--card-bg); border-color: var(--navy); }
+  .tools { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .seg-ctl { display: inline-flex; border: 1px solid var(--border); border-radius: 999px; overflow: hidden; background: var(--card-bg); }
+  .seg-ctl button, .tool-btn { font: inherit; font-size: 13px; font-weight: 600; color: var(--navy); background: transparent; border: 0; padding: 6px 13px; cursor: pointer; }
+  .tool-btn { border: 1px solid var(--border); border-radius: 999px; background: var(--card-bg); }
+  .seg-ctl button[aria-pressed="true"] { background: var(--navy); color: var(--card-bg); }
+  .seg-ctl button:hover:not([aria-pressed="true"]), .tool-btn:hover { background: var(--blue-bg); }
+  .seg-ctl button:focus-visible, .tool-btn:focus-visible { outline: 2px solid var(--navy-light); outline-offset: 2px; }
+  .seg i { transition: width .9s cubic-bezier(.2,.7,.2,1); cursor: pointer; }
+  .res-bar > i { transition: width .9s cubic-bezier(.2,.7,.2,1); }
+  .module-card { transition: transform .15s ease, border-color .15s ease; } .module-card:hover { transform: translateY(-2px); }
+  #open-issues tr.hl td { background: var(--amber-bg); }
+  #open-issues tbody tr, #open-issues tr:not(:first-child) { cursor: pointer; }
+  .filter-note { font-size: 12.5px; color: var(--grey); margin: 0 0 10px; display: none; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+  /* ===== Theme: Deep Teal & Coral ===== */
+  :root {
+    --navy:#0f4c5c; --navy-light:#1b7a8c; --blue-bg:#e8f1f3;
+    --green:#1f8a5b; --green-bg:#e0f3ea;
+    --amber:#b4441a; --amber-bg:#fdeee6; --amber-border:#f0b596;
+    --grey:#5a6b72; --card-bg:#ffffff; --page-bg:#f3f6f7; --border:#d9e2e5; --text:#16262b;
+    --hdr:#0b3c49; --accent:#e4572e; --shadow:none;
+    --serif: Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --navy:#6cc4d4; --navy-light:#8fd3df; --blue-bg:#12292f; --green:#5fd39b; --green-bg:#0f2f22;
+    --amber:#ff9a6b; --amber-bg:#35190e; --amber-border:#6b3a22; --grey:#9fb3ba;
+    --card-bg:#142329; --page-bg:#0d181c; --border:#26393f; --text:#e6eef0; --hdr:#0e3540; } }
+  :root[data-theme="dark"] {
+    --navy:#6cc4d4; --navy-light:#8fd3df; --blue-bg:#12292f; --green:#5fd39b; --green-bg:#0f2f22;
+    --amber:#ff9a6b; --amber-bg:#35190e; --amber-border:#6b3a22; --grey:#9fb3ba;
+    --card-bg:#142329; --page-bg:#0d181c; --border:#26393f; --text:#e6eef0; --hdr:#0e3540; }
+
+  body { font-size: 15px; }
+  .header { background: var(--hdr); border-radius: 4px; border-left: 8px solid var(--accent); padding: 32px 36px; color: #fff; }
+  .header h1, .snap-big, .kpi-value, .module-name, .section h2, h2[id^="module-"] { font-family: var(--serif); font-weight: 700; }
+  .header h1 { font-size: 30px; letter-spacing: 0; }
+  .status-chip { background: var(--accent); border: 0; color: #fff; border-radius: 4px; font-weight: 700; }
+  .section, .kpi-card, .module-card, details.scenario, .issue-card { border-radius: 6px; box-shadow: none; }
+  .section { border: 1px solid var(--border); border-top: 3px solid var(--navy); }
+  .section h2 { border-left: 0; padding-left: 0; font-size: 19px; color: var(--navy); border-bottom: 1px solid var(--border); }
+  h2[id^="module-"] { color: var(--navy); font-size: 23px !important; border-bottom: 2px solid var(--accent); }
+  th { background: var(--blue-bg); color: var(--navy); }
+  .meta-table td:first-child, .status-table td:first-child { background: var(--blue-bg); color: var(--navy); }
+  .kpi-card { border-top: 3px solid var(--navy-light); }
+  .kpi-card.green { border-top-color: var(--green); } .kpi-card.amber { border-top-color: var(--accent); }
+  .kpi-value { font-size: 32px; }
+  .module-card { border-left: 4px solid var(--navy-light); }
+  .module-card:hover { border-color: var(--accent); border-left-color: var(--accent); }
+  details.scenario > summary { background: var(--blue-bg); }
+  .topnav a { border-radius: 4px; } .tool-btn, .seg-ctl { border-radius: 4px; }
+  .topnav a.active, .seg-ctl button[aria-pressed="true"] { background: var(--navy); color: var(--card-bg); }
+  .seg .a { background: var(--accent); } .seg .g { background: var(--green); }
+  .snap-big { color: var(--navy); font-size: 60px; }
+  .open-badge { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .issue-num { background: var(--accent); }
+  .issue-group-title { color: var(--amber); }
+  .pass-badge, .resolved-badge { border-radius: 4px; }
+  .res-bar { background: var(--amber-bg); border-radius: 2px; } .res-bar > i, .seg { border-radius: 2px; }
+  .seg { border-radius: 3px; }
+  footer { border-top: 1px solid var(--border); padding-top: 14px; }
+  .is-hidden { display: none !important; }
+  .issue-num { width: 26px; min-width: 26px; max-width: 26px; height: 26px; flex: 0 0 26px; border-radius: 50%; }
+  .flash { outline: 3px solid var(--accent); outline-offset: 4px; border-radius: 6px; transition: outline-color .3s; }
+  .sev { display: inline-block; padding: 2px 10px; border-radius: 4px; font-weight: 700; font-size: 12px; white-space: nowrap; }
+  .sev-low { background: var(--blue-bg); color: var(--navy); border: 1px solid var(--navy-light); }
+  .sev-medium { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <h1>Final Workspace Mobile APP — Dashboard</h1>
+      <p>Module-Wise Testing Summary · Validated against Oracle · Report Date: September 24, 2026</p>
+    </div>
+    <div class="status-chip">5 modules · 2 open issues</div>
+  </div>
+
+  <nav class="topnav" aria-label="Sections">
+    <a href="#summary">Summary</a><a href="#open-issues">Open issues</a><a href="#module-1">Leave</a><a href="#module-2">Expense</a><a href="#module-3">Wallet</a><a href="#module-4">Homepage</a><a href="#module-5">Document Request</a>
+    <span class="tools">
+      <span class="seg-ctl" role="group" aria-label="Filter issues"><button data-f="all" aria-pressed="true">All issues</button><button data-f="open" aria-pressed="false">Open</button><button data-f="fixed" aria-pressed="false">Fixed</button></span>
+      <button class="tool-btn" id="toggleAll">Expand all</button>
+      <button class="tool-btn" id="themeBtn" aria-label="Toggle light or dark theme">Dark mode</button>
+    </span>
+  </nav>
+
+  <div class="section" id="summary">
+    <h2>Executive Snapshot</h2>
+    <div class="snap">
+      <div><div class="snap-big">94%</div><div class="snap-sub">of logged issues resolved (30 of 32) across five modules</div></div>
+      <div>
+        <div class="seg" role="img" aria-label="30 issues resolved, 2 open"><i class="g" data-w="93.8" style="width:0" title="30 resolved"></i><i class="a" data-w="6.2" style="width:0" title="2 open — click to view"></i></div>
+        <div class="legend"><span><b>30</b> resolved</span><span><b>2</b> open</span></div>
+        <div class="snap-stats">
+          <div><b>5</b>Modules tracked</div><div><b>32</b>Test cases (Leave, Expense, Document Request)</div><div><b>16</b>Document request types covered</div><div><b>0</b>Workflow mismatches vs Oracle</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="open-issues">
+    <h2>Open Issues Requiring Attention</h2>
+    <table>
+      <tr><th style="width:170px">Module</th><th>Issue</th><th style="width:90px">Status</th><th style="width:100px">Severity</th></tr>
+      <tr><td class="mtag">Homepage</td><td>Announcement section shows a noticeable loading delay and a blank grey area before content appears.</td><td><span class="open-badge" style="margin:0">Open</span></td><td><span class="sev sev-low">Low</span></td></tr>
+      <tr><td class="mtag">Document Request</td><td>Auto-approved documents redirect to the "In Review" tab and show "In Review" instead of "Approved".</td><td><span class="open-badge" style="margin:0">Open</span></td><td><span class="sev sev-medium">Medium</span></td></tr>
+    </table>
+  </div>
+
+  <!-- Module-wise summary -->
+  <div class="section">
+    <h2>Module-Wise Summary</h2>
+    <p class="note" style="margin:-4px 0 12px;font-style:normal;">Total test cases, open issues and closed issues per module. “—” indicates data not yet available.</p>
+    <div class="module-grid">
+      <a class="module-card" href="#module-1">
+        <div class="module-card-top"><span class="module-name">Leave Module</span><span class="mod-chip progress">In Progress</span></div>
+        <div class="module-stats"><div><b>12</b><span>Test Cases</span></div><div class="open"><b>0</b><span>Open Issues</span></div><div class="closed"><b>22</b><span>Closed Issues</span></div></div>
+        <div class="module-note">All workflows matched Oracle</div>
+      </a>
+      <a class="module-card" href="#module-2">
+        <div class="module-card-top"><span class="module-name">Expense Module</span><span class="mod-chip pass">Completed</span></div>
+        <div class="module-stats"><div><b>4</b><span>Test Cases</span></div><div class="open"><b>0</b><span>Open Issues</span></div><div class="closed"><b>0</b><span>Closed Issues</span></div></div>
+        <div class="module-note">Condition-by-condition testing underway</div>
+      </a>
+      <a class="module-card" href="#module-3">
+        <div class="module-card-top"><span class="module-name">Wallet Module</span><span class="mod-chip pass">Completed</span></div>
+        <div class="module-stats"><div><b>—</b><span>Test Cases</span></div><div class="open"><b>0</b><span>Open Issues</span></div><div class="closed"><b>3</b><span>Closed Issues</span></div></div>
+        <div class="module-note">All 3 issues fixed</div>
+      </a>
+      <a class="module-card" href="#module-4">
+        <div class="module-card-top"><span class="module-name">Homepage Module</span><span class="mod-chip progress">In Progress</span></div>
+        <div class="module-stats"><div><b>—</b><span>Test Cases</span></div><div class="open"><b>1</b><span>Open Issues</span></div><div class="closed"><b>2</b><span>Closed Issues</span></div></div>
+        <div class="module-note">Content updates pending from SharePoint</div>
+      </a>
+      <a class="module-card" href="#module-5">
+        <div class="module-card-top"><span class="module-name">Document Request Module</span><span class="mod-chip pass">Completed</span></div>
+        <div class="module-stats"><div><b>16</b><span>Test Cases</span></div><div class="open"><b>1</b><span>Open Issues</span></div><div class="closed"><b>3</b><span>Closed Issues</span></div></div>
+        <div class="module-note">11 Pass · 5 Out of Scope · 3 fixed · 1 open</div>
+      </a>
+    </div>
+    <p class="intro" style="margin-top:14px;margin-bottom:0;">Detailed, scenario-level results are available for the Leave Module. Expense, Wallet, Homepage, and Document Request modules are summarized at current status below.</p>
+  </div>
+
+  <h2 id="module-1" style="font-size:20px;color:var(--navy);margin:30px 4px 10px;">Module 1: Leave Module</h2>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-value">12</div><div class="kpi-label">Test Cases Executed</div></div>
+    <div class="kpi-card green"><div class="kpi-value">12</div><div class="kpi-label">Passed</div></div>
+    <div class="kpi-card amber"><div class="kpi-value">22</div><div class="kpi-label">Issues Found</div></div>
+    <div class="kpi-card green"><div class="kpi-value">100%</div><div class="kpi-label">Oracle Match Rate</div></div>
+  </div>
+
+  <!-- Report meta -->
+  <div class="section">
+    <h2>Report Overview</h2>
+    <table class="meta-table">
+      <tr><td>Module</td><td>Leave Module</td></tr>
+      <tr><td>Application</td><td>HR ERP System (validated against Oracle)</td></tr>
+      <tr><td>Scope of Testing</td><td>End-to-end leave approval workflows across 6 leave types, including Emergency-option and multi-duration variants</td></tr>
+      <tr><td>Leave Types Covered</td><td>
+        <ul>
+          <li>Compassionate Leave</li>
+          <li>Medical Leave</li>
+          <li>Annual Leave — with and without Emergency option</li>
+          <li>Sick Leave — with and without Emergency option</li>
+          <li>Medical Escort Leave</li>
+          <li>Examination & Study Leave — tested at 1, 2, and 11-day durations</li>
+          <li>Unauthorized Leave of Absence</li>
+          <li>Unpaid Medical Escort Leave</li>
+        </ul>
+      </td></tr>
+      <tr><td>Validation Method</td><td>Approval chain, approver sequence, and final status at each stage cross-checked against Oracle application records</td></tr>
+      <tr><td>Employees Involved</td><td>Keval, Mridul</td></tr>
+      <tr><td>Test Cases Executed</td><td>12</td></tr>
+      <tr><td>Defects Identified</td><td>22 — 4 Annual Leave (2.4; all resolved), 5 Compassionate Leave (2.1; all resolved), 3 Medical Escort Leave (2.7; all resolved), 5 Medical Leave (2.2; all resolved), 2 Sick Leave–No Emergency (2.5; all resolved), 3 Sick Leave–Emergency (2.6; all resolved)</td></tr>
+      <tr><td>Report Date</td><td>September 24, 2026</td></tr>
+      <tr><td>Overall Result</td><td><span class="pass-badge">✓ PASS — All workflows executed and matched Oracle; UI/display issues noted (non-blocking)</span></td></tr>
+    </table>
+  </div>
+
+  <!-- Executive summary -->
+  <div class="section">
+    <h2>Executive Summary</h2>
+    <p style="font-size:14.5px;">Twelve leave application scenarios were tested end-to-end to validate that the approval workflow routes to the correct approvers, in the correct sequence, for different leave types and conditions. In all twelve scenarios, the leave request progressed through the expected approval chain, each approver's action was correctly reflected in the system, and the final status matched the corresponding record in Oracle. No workflow discrepancies were identified.</p>
+    <ul class="exec-list">
+      <li>Compassionate Leave: 2-level approval chain executed correctly.</li>
+      <li>Medical Leave: 4-level approval chain executed correctly.</li>
+      <li>Annual Leave (Emergency not selected): 1-level approval chain executed correctly.</li>
+      <li>Annual Leave (Emergency selected): 4-level approval chain executed correctly, confirming the Emergency toggle correctly extends the approval chain.</li>
+      <li>Sick Leave (Emergency not selected): 2-level approval chain executed correctly.</li>
+      <li>Sick Leave (Emergency selected): 4-level approval chain executed correctly, consistent with the Emergency toggle behavior seen for Annual Leave.</li>
+      <li>Medical Escort Leave: 2-level approval chain executed correctly.</li>
+      <li>Examination & Study Leave: 3-level approval chain executed correctly, consistently across leave durations of 1, 2, and 11 days.</li>
+      <li>Unauthorized Leave of Absence: 2-level approval chain executed correctly.</li>
+      <li>Unpaid Medical Escort Leave: 4-level approval chain executed correctly.</li>
+    </ul>
+  </div>
+
+  <!-- Detailed scenarios -->
+  <div class="section">
+    <h2>Test Scenarios &amp; Results — Full Detail</h2>
+    <p class="intro">Click any scenario to expand the full step-by-step approval chain, exactly as recorded in the test summary report.</p>
+    <div id="scenarios"></div>
+  </div>
+
+  <!-- Conclusion -->
+  <div class="section">
+    <h2>Conclusion</h2>
+    <p class="conclusion-text">All twelve tested leave workflows — Compassionate Leave, Medical Leave, Annual Leave, Sick Leave (both Emergency and non-Emergency conditions), Medical Escort Leave, Examination &amp; Study Leave (across 1, 2, and 11-day durations), Unauthorized Leave of Absence, and Unpaid Medical Escort Leave — routed correctly through their respective approval hierarchies. Each approver's action and the resulting leave status were verified against Oracle with no mismatches. Four UI/data-display issues were identified under Annual Leave (all resolved, including the "00" number format for zero leave counts); none of them blocked or altered the approval outcome. Based on the scenarios covered, the Leave Module's approval workflow logic for these leave types is functioning as intended.</p>
+    <p class="note">Note: This report covers the leave types and conditions listed above. Workflow mapping for the remaining leave types is in progress separately and will be reported once completed.</p>
+  </div>
+
+  <h2 id="module-2" style="font-size:20px;color:var(--navy);margin:30px 4px 10px;">Module 2: Expense Module</h2>
+  <div class="section">
+    <table class="status-table">
+      <tr><td>Module</td><td>Expense Module</td></tr>
+      <tr><td>Status</td><td><span class="mod-chip pass">Completed</span></td></tr>
+      <tr><td>Open Queries</td><td>
+        <ul style="margin:0;padding-left:18px;">
+          <li style="text-decoration:line-through;color:var(--grey);">Handling of password-protected attachments during submission — <span style="text-decoration:none;color:var(--green);font-weight:700;">Closed</span></li>
+          <li style="text-decoration:line-through;color:var(--grey);">Visibility of the pending approver to the employee — <span style="text-decoration:none;color:var(--green);font-weight:700;">Closed</span></li>
+          <li style="text-decoration:line-through;color:var(--grey);">Approval status label does not update after Manager approval (Oracle shows next approver as Rwad Al Moukdad) — <span style="text-decoration:none;color:var(--green);font-weight:700;">Closed</span></li>
+          <li style="text-decoration:line-through;color:var(--grey);">No access to the Expense Auditor approval step — final outcome for Condition 1 cannot currently be verified — <span style="text-decoration:none;color:var(--green);font-weight:700;">Closed</span></li>
+        </ul>
+        <div style="margin-top:6px;"><span class="mod-chip" style="background:var(--green-bg);color:var(--green);font-size:12.5px;padding:4px 10px;">All queries closed</span></div>
+      </td></tr>
+      <tr><td>Test Cases Executed</td><td>4</td></tr>
+    </table>
+    <p class="note" style="margin-bottom:18px;">This section will be expanded with further conditions and scenarios as they are provided.</p>
+
+    <h3 style="font-size:15px;color:var(--navy);margin:0 0 10px;">Test Scenarios &amp; Results</h3>
+    <details class="scenario" open>
+      <summary><span>Condition 1 — Expense &gt; 500 AED, Petty Cash = No</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <div class="scenario-meta"><b>Employee:</b> Keval Langhanoja</div>
+        <table>
+          <tr><th>Approval Stage</th><th>Action Taken</th></tr>
+          <tr><td style="font-weight:700;">Employee (Keval Langhanoja)</td><td>Submitted Expense request (Expense &gt; 500 AED, Petty Cash = No)</td></tr>
+          <tr><td style="font-weight:700;">Tejpal Singh</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Mascha بيلوت</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">فراس عبد الجميل</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Expense Auditor</td><td>Assigned — pending</td></tr>
+        </table>
+        <div class="final-status" style="margin-top:10px;"><b>Final Status:</b> Pending — assigned to Expense Auditor approval</div>
+        <div style="margin-top:6px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">PENDING — no access to the Expense Auditor approval step to verify further</span></div>
+        <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Approval chain and final status match Oracle</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Condition 2 — Expense &lt; 500 AED, Petty Cash = Yes</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <div class="scenario-meta"><b>Employee:</b> Mridul Attrey</div>
+        <table>
+          <tr><th>Approval Stage</th><th>Action Taken</th></tr>
+          <tr><td style="font-weight:700;">Employee (Mridul Attrey)</td><td>Submitted Expense request (Expense &lt; 500 AED, Petty Cash = Yes)</td></tr>
+          <tr><td style="font-weight:700;">HR Specialist</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Expense Auditor</td><td>Assigned — pending</td></tr>
+        </table>
+        <div class="final-status" style="margin-top:10px;"><b>Final Status:</b> Pending — assigned to Expense Auditor approval</div>
+        <div style="margin-top:6px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">APP &amp; Oracle system status: "Pending expense auditor approval"</span></div>
+        <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Approval chain and final status match Oracle</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Condition 3 — Expense &lt; 500 AED, Petty Cash = No</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <div class="scenario-meta"><b>Employee:</b> Mridul Attrey</div>
+        <table>
+          <tr><th>Approval Stage</th><th>Action Taken</th></tr>
+          <tr><td style="font-weight:700;">Employee (Mridul Attrey)</td><td>Submitted Expense request (Expense &lt; 500 AED, Petty Cash = No)</td></tr>
+          <tr><td style="font-weight:700;">Tejpal Singh</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Rwad Al Moukdad</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Sofia Francisca خاتي</td><td>Approved</td></tr>
+        </table>
+        <div class="final-status" style="margin-top:10px;"><b>Final Status:</b> Approved</div>
+        <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Expense Approved</span></div>
+        <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Approval chain and final status match Oracle</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Condition 4 — Expense &gt; 500 AED, Petty Cash = Yes</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <div class="scenario-meta"><b>Employee:</b> Mridul Attrey</div>
+        <table>
+          <tr><th>Approval Stage</th><th>Action Taken</th></tr>
+          <tr><td style="font-weight:700;">Employee (Mridul Attrey)</td><td>Submitted Expense request (Expense &gt; 500 AED, Petty Cash = Yes)</td></tr>
+          <tr><td style="font-weight:700;">HC Director</td><td>Approved</td></tr>
+          <tr><td style="font-weight:700;">Expense Auditor</td><td>Assigned — pending</td></tr>
+        </table>
+        <div class="final-status" style="margin-top:10px;"><b>Final Status:</b> Pending — assigned to Expense Auditor approval</div>
+        <div style="margin-top:6px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">APP &amp; Oracle system status: "Pending expense auditor approval"</span></div>
+        <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Approval chain and final status match Oracle</span></div>
+      </div>
+    </details>
+  </div>
+
+  <h2 id="module-3" style="font-size:20px;color:var(--navy);margin:30px 4px 10px;">Module 3: Wallet Module</h2>
+  <div class="section">
+    <table class="status-table">
+      <tr><td>Module</td><td>Wallet Module</td></tr>
+      <tr><td>Status</td><td><span class="mod-chip pass">Completed</span></td></tr>
+      <tr><td>Summary</td><td>Testing of the Wallet Module has been completed. All 3 issues identified during testing have been fixed.</td></tr>
+      <tr><td>Outstanding Defects</td><td>0</td></tr>
+    </table>
+
+    <h3 style="font-size:15px;color:var(--navy);margin:22px 0 12px;">Known Issues</h3>
+    <div class="issue-card" style="flex-direction:column; gap:8px;">
+      <div class="issue-group-title" style="margin:0;">⚠️ Issues Noted — Wallet</div>
+      <div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">When a Wallet Administrator deactivates or marks a user's wallet as Inactive, the status change should be visible inside the card.</span><span class="resolved-badge">✓ Fixed</span></div></div><div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">When a second user logs in after a previous user's session, the Wallet section on the Homepage briefly displays the previous user's data before refreshing to show the correct, logged-in user's data.</span><span class="resolved-badge">✓ Fixed</span></div></div><div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">As a Wallet Admin, when attempting to change the Wallet Status, the button gets stuck displaying "Saving..." and does not complete the action.</span><span class="resolved-badge">✓ Fixed</span></div></div>
+    </div>
+    <p class="note">Detailed scenario-level results for the Wallet Module can be added here if a breakdown by transaction type or workflow step is required.</p>
+  </div>
+
+  <h2 id="module-4" style="font-size:20px;color:var(--navy);margin:30px 4px 10px;">Module 4: Homepage Module</h2>
+  <div class="section">
+    <table class="status-table">
+      <tr><td>Module</td><td>Homepage Module</td></tr>
+      <tr><td>Status</td><td><span class="mod-chip progress">In Progress</span></td></tr>
+      <tr><td>Summary</td><td>Functional testing of the Homepage is complete; some sections require content updates from SharePoint before final sign-off.</td></tr>
+      <tr><td>Coordination</td><td>Requested from Syed, who redirected to Diptangshu. Currently coordinating with Diptangshu to finalize remaining content.</td></tr>
+    </table>
+
+    <h3 style="font-size:15px;color:var(--navy);margin:22px 0 12px;">Known Issues</h3>
+    <div class="issue-card" style="flex-direction:column; gap:8px;">
+      <div class="issue-group-title" style="margin:0;">⚠️ Issues Noted — Homepage</div>
+      <div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">Notification badge — if unread notifications exist, the system should display the correct unread count (e.g., 1, 2, 3+) on the notification icon/badge.</span><span class="resolved-badge">✓ Fixed</span></div></div><div style="display:flex; gap:10px;"><div class="issue-num">2</div><div>Announcement section has a noticeable loading delay and appears blank (grey) before content is displayed.<span class="open-badge">Open</span></div></div><div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">Announcements are not displaying for users with the Employee role, whereas Managers are able to view all announcements.</span><span class="resolved-badge">✓ Fixed</span></div></div>
+    </div>
+    <p class="note">This section will be updated once the outstanding SharePoint content is finalized.</p>
+  </div>
+
+  <h2 id="module-5" style="font-size:20px;color:var(--navy);margin:30px 4px 10px;">Module 5: Document Request Module</h2>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-value">16</div><div class="kpi-label">Request Types Executed</div></div>
+    <div class="kpi-card green"><div class="kpi-value">11</div><div class="kpi-label">Passed</div></div>
+    <div class="kpi-card amber"><div class="kpi-value">0</div><div class="kpi-label">Failed</div></div>
+    <div class="kpi-card"><div class="kpi-value">5</div><div class="kpi-label">Out of Scope</div></div>
+  </div>
+
+  <div class="section">
+    <table class="status-table">
+      <tr><td>Module</td><td>Document Request Module</td></tr>
+      <tr><td>Status</td><td><span class="mod-chip pass">Completed</span></td></tr>
+      <tr><td>Reason</td><td>All 16 request types have been tested for Approval workflow, Document Fetch, Notification, and UI behavior. "Salary Certificate For Immigration" was previously flagged on the Approval step and has since been retested and passed. Four additional issues logged separately, of which 3 are fixed and 1 remains open (see Known Issues below).</td></tr>
+      <tr><td>Test Cases Executed</td><td>16</td></tr>
+    </table>
+    <p class="note" style="margin-bottom:18px;">Each request type below was checked across four dimensions: whether Approval is required and its result, whether Document Fetch is required and its result, Notification behavior, and UI behavior.</p>
+
+    <h3 style="font-size:15px;color:var(--navy);margin:0 0 10px;">Request Types &amp; Results</h3>
+
+    <details class="scenario">
+      <summary><span>Add or Edit — Bank Details</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Add or Update — Passport Details</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Add or Update — Photograph</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Add or Update — School Registration Letter</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Add or Update — Tenancy Contract Details</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Application</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Cash Payment Voucher</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval / Fetch / Notification / UI</td><td>Out of Scope</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">OUT OF SCOPE</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Ethara Experience Letters</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval / Fetch / Notification / UI</td><td>Out of Scope</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">OUT OF SCOPE</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Payslip</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval / Fetch / Notification / UI</td><td>Out of Scope</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">OUT OF SCOPE</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Recruiting</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval / Fetch / Notification / UI</td><td>Out of Scope</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">OUT OF SCOPE</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Recruiting Job Offer</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval / Fetch / Notification / UI</td><td>Out of Scope</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="mod-chip progress" style="font-size:12.5px;padding:4px 10px;">OUT OF SCOPE</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Request — Salary Certificate For Banks</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch Status</td><td>EN and AR both working fine; Arabic doc is empty so content could not be validated in Arabic</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Request — Salary Certificate For General</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch Status</td><td>EN and AR both working fine; Arabic doc is empty so content could not be validated in Arabic</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Request — Salary Certificate For Immigration</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>Request — Salary Transfer Letter</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <details class="scenario">
+      <summary><span>View Visa &amp; Emirates ID Details</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">
+        <table>
+          <tr><th>Check</th><th>Result</th></tr>
+          <tr><td style="font-weight:700;">Approval Needed</td><td>Yes</td></tr>
+          <tr><td style="font-weight:700;">Approval Status</td><td>Pass</td></tr>
+          <tr><td style="font-weight:700;">Document Fetch</td><td>No</td></tr>
+          <tr><td style="font-weight:700;">Notification</td><td>Working fine</td></tr>
+          <tr><td style="font-weight:700;">UI</td><td>Pass</td></tr>
+        </table>
+        <div style="margin-top:10px;"><span class="pass-badge">✓ PASS</span></div>
+      </div>
+    </details>
+
+    <h3 style="font-size:15px;color:var(--navy);margin:22px 0 12px;">Known Issues</h3>
+    <div class="issue-group-title">⚠️ Issues Noted — Document Request Module</div>
+    <div class="issue-card resolved-item"><div class="issue-num done">✓</div><div><span class="resolved-text">Incorrect folder name on document download — when downloading an issued document, the file is saved locally under a folder named "Workplace" instead of "Workspace." Expected: the downloaded document should be saved under a folder named "Workspace" to align with correct application terminology.</span><span class="resolved-badge">✓ Fixed</span></div></div>
+    <div class="issue-card resolved-item"><div class="issue-num done">✓</div><div><span class="resolved-text">Loading icon persists and disappears without displaying the document — for request types where document fetch is not in scope, the "Issued Document" section shows a loading spinner for roughly 3–4 seconds before disappearing without showing a document or an appropriate message. Expected: that section should not be displayed when fetching is not applicable.</span><span class="resolved-badge">✓ Fixed</span></div></div>
+    <div class="issue-card"><div class="issue-num">3</div><div>Incorrect redirection and status display for auto-approved documents — for auto-approve documents, the user gets a "Document Approved" confirmation on submission but is redirected to the "In Review" tab, where the document shows an "In Review" status instead of "Approved." Expected: the user should be redirected to the "Approved" tab with the status consistently showing "Approved."<span class="open-badge">Open</span></div></div>
+    <div class="issue-card resolved-item"><div class="issue-num done">✓</div><div><span class="resolved-text">Attachments — app crashes on opening a large PDF. A 38-page PDF was uploaded as an attachment, and when the employee opens it from the Attachments section, the app crashes. Expected: the PDF should open without crashing.</span><span class="resolved-badge">✓ Fixed</span></div></div>
+  </div>
+
+  <div class="section">
+    <h2>Overall Conclusion</h2>
+    <p class="conclusion-text">Of the four HR ERP modules in scope, the <strong>Leave Module</strong> is in progress — 12 scenarios have been tested so far with all approval workflows matching Oracle, though 22 UI/data-display and notification issues were identified (all resolved). The <strong>Wallet Module</strong> testing is complete; all 3 identified issues have been fixed. The <strong>Expense Module</strong> testing is complete, with all four conditions passing and matching Oracle, and all open queries closed. The <strong>Homepage Module</strong> is functionally complete but awaiting final content updates from SharePoint; of 3 issues logged, 2 are fixed and 1 is open. The <strong>Document Request Module</strong> testing is complete across all 16 request types: 11 passed and 5 are out of scope for approval/fetch; the earlier approval-step issue on Salary Certificate For Immigration has been retested and now passes. Of four UI/workflow issues logged, three have been fixed (incorrect download folder name, the persistent loading icon, and the app crash when opening a 38-page PDF attachment) and one remains open (incorrect redirection and status for auto-approved documents). This dashboard will be updated as testing progresses on the Leave and Homepage modules and as the remaining Document Request Module issues are resolved.</p>
+  </div>
+
+  <footer>Workspace Mobile APP Test Summary — module-wise dashboard, mirroring the Word test summary report.</footer>
+
+</div>
+
+<script>
+  const scenarios = [
+    {
+      title: "2.1  Compassionate Leave",
+      meta: [["Employee", "Keval"], ["Application Date Type", "Past date"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Compassionate Leave (past date)"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+      ],
+    },
+    {
+      title: "2.2  Medical Leave",
+      meta: [["Employee", "Keval"], ["Application Date Type", "Past date"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Medical Leave (past date)"],
+        ["Manager (Tejpal)", "Approved"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+        ["Shaikha Zeina Elayan", "Approved"],
+      ],
+    },
+    {
+      title: "2.3  Annual Leave — Emergency Option NOT Selected",
+      meta: [["Employee", "Mridul"], ["Application Date Type", "Future date"]],
+      chain: [
+        ["Employee (Mridul)", "Applied for Annual Leave (future date), Emergency not selected"],
+        ["Manager (Tejpal)", "Approved"],
+      ],
+    },
+    {
+      title: "2.4  Annual Leave — Emergency Option Selected",
+      meta: [["Employee", "Mridul"], ["Application Date Type", "Future date"]],
+      chain: [
+        ["Employee (Mridul)", "Applied for Annual Leave (future date), Emergency selected"],
+        ["Manager (Tejpal)", "Approved"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+        ["Shaikha Zeina Elayan", "Approved"],
+      ],
+    },
+    {
+      title: "2.5  Sick Leave — Emergency Option NOT Selected",
+      meta: [["Employee", "Keval"], ["Application Date Type", "Past date"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Sick Leave (past date), Emergency not selected"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+      ],
+    },
+    {
+      title: "2.6  Sick Leave — Emergency Option Selected",
+      meta: [["Employee", "Keval"], ["Application Date Type", "Future date"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Sick Leave (future date), Emergency selected"],
+        ["Manager (Tejpal)", "Approved"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+        ["Shaikha Zeina Elayan", "Approved"],
+      ],
+    },
+    {
+      title: "2.7  Medical Escort Leave",
+      meta: [["Employee", "Keval"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Medical Escort Leave"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+      ],
+    },
+    {
+      title: "2.8  Examination & Study Leave (15 Days entitlement)",
+      note: "Three durations were tested against the same leave type to confirm the approval chain is consistent regardless of the number of days applied for.",
+      subScenarios: [
+        {
+          label: "Scenario 1 — 2 Days",
+          meta: [["Employee", "Keval"]],
+          chain: [
+            ["Employee (Keval)", "Applied for Examination & Study Leave (2 days)"],
+            ["Manager (Tejpal)", "Approved"],
+            ["HR Specialist", "Approved"],
+            ["HC Director", "Approved"],
+          ],
+        },
+        {
+          label: "Scenario 2 — 11 Days",
+          meta: [["Employee", "Keval"]],
+          chain: [
+            ["Employee (Keval)", "Applied for Examination & Study Leave (11 days)"],
+            ["Manager (Tejpal)", "Approved"],
+            ["HR Specialist", "Approved"],
+            ["HC Director", "Approved"],
+          ],
+        },
+        {
+          label: "Scenario 3 — 1 Day",
+          meta: [["Employee", "Keval"]],
+          chain: [
+            ["Employee (Keval)", "Applied for Examination & Study Leave (1 day)"],
+            ["Manager (Tejpal)", "Approved"],
+            ["HR Specialist", "Approved"],
+            ["HC Director", "Approved"],
+          ],
+        },
+      ],
+    },
+    {
+      title: "2.9  Unauthorized Leave of Absence",
+      meta: [["Employee", "Keval"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Unauthorized Leave of Absence"],
+        ["HC Director", "Approved"],
+        ["Shaikha Zeina Elayan", "Approved"],
+      ],
+    },
+    {
+      title: "2.10  Unpaid Medical Escort Leave",
+      meta: [["Employee", "Keval"]],
+      chain: [
+        ["Employee (Keval)", "Applied for Unpaid Medical Escort Leave"],
+        ["Manager (Tejpal)", "Approved"],
+        ["HR Specialist", "Approved"],
+        ["HC Director", "Approved"],
+        ["Shaikha Zeina Elayan", "Approved"],
+      ],
+    },
+  ];
+
+  function chainTable(chain) {
+    let rows = chain.map(([stage, action]) =>
+      `<tr><td style="font-weight:700;">${stage}</td><td>${action}</td></tr>`
+    ).join("");
+    return `<table><tr><th>Approval Stage</th><th>Action Taken</th></tr>${rows}</table>`;
+  }
+
+  function metaLine(meta) {
+    return meta.map(([k, v]) => `<b>${k}:</b> ${v}`).join(" &nbsp;·&nbsp; ");
+  }
+
+  function resultBlock() {
+    return `<div class="final-status"><b>Final Status:</b> Leave Approved</div>
+            <div style="margin-top:6px;"><span class="pass-badge">✓ PASS — Approval chain and final status match Oracle</span></div>`;
+  }
+
+  function issuesBlock(label, issues) {
+    const items = issues.map((it, i) => {
+      const o = typeof it === 'string' ? { t: it } : it;
+      return o.resolved
+        ? `<div style="display:flex; gap:10px;"><div class="issue-num done">✓</div><div><span class="resolved-text">${o.t}</span><span class="resolved-badge">✓ Resolved</span></div></div>`
+        : `<div style="display:flex; gap:10px;"><div class="issue-num">${i + 1}</div><div>${o.t}<span class="open-badge">Open</span></div></div>`;
+    }).join('');
+    return `
+      <div class="issue-card" style="flex-direction:column; gap:8px; margin-top:14px;">
+        <div class="issue-group-title" style="margin:0;">⚠️ Issues Noted — ${label}</div>
+        ${items}
+      </div>`;
+  }
+
+  const issuesByScenario = {
+    '2.1': {
+      label: 'Compassionate Leave',
+      issues: [
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> appears inside the Leave Description text instead of its own field. For all other approvers, it correctly displays as a separate field.' },
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Reason"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+        { resolved: true, t: 'After the <strong>HC Director approves</strong> (Employee → HR Specialist approves → HC Director approves), the approval notification is sent to both the final approver (HC Director) and the Employee. Expected: the notification should go only to the Employee.' },
+        { resolved: true, t: 'After the <strong>HC Director approves</strong> (Employee → HR Specialist approves → HC Director approves), the approval notification is sent to the final approver (HC Director). Expected: the notification should go to the Employee.' },
+      ],
+    },
+    '2.2': {
+      label: 'Medical Leave',
+      issues: [
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> appears inside the Leave Description text instead of its own field. For all other approvers, it correctly displays as a separate field.' },
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Reason"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Condition Start Date"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+        { resolved: true, t: 'After the leave request is approved by the <strong>final approver</strong>, no notification is received by the Employee. Expected: the Employee should receive a notification once the leave is approved.' },
+      ],
+    },
+    '2.4': {
+      label: 'Annual Leave',
+      issues: [
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Country Travelling To"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> appears inside the Leave Description text instead of its own field. For all other approvers, it correctly displays as a separate field.' },
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: '<strong>Number format</strong> — a leave count of zero is displayed as "00" (zero leave requests), which looks unnatural. Expected: display "0", consistent with the Expense Summary dashboard.' },
+      ],
+    },
+    '2.5': {
+      label: 'Sick Leave — Emergency Option NOT Selected',
+      issues: [
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> field is not visible to the Employee and for all other approvers.' },
+      ],
+    },
+    '2.6': {
+      label: 'Sick Leave — Emergency Option Selected',
+      issues: [
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> field is not visible to the Employee and for all other approvers.' },
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Reason"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+      ],
+    },
+    '2.7': {
+      label: 'Medical Escort Leave',
+      issues: [
+        { resolved: true, t: 'After submission, the <strong>"Request Pending With"</strong> field does not display to the Employee who submits the request. It only becomes visible after logging in as the First Approver and then logging back in as the employee.' },
+        { resolved: true, t: 'After submission, the employee\'s <strong>Emergency Contact Number</strong> appears inside the Leave Description text instead of its own field. For all other approvers, it correctly displays as a separate field.' },
+        { resolved: true, t: 'After a leave request is submitted, the <strong>"Country of Treatment"</strong> field is not visible — neither to the employee who submitted the request nor to any of the approvers.' },
+      ],
+    },
+  };
+
+  const container = document.getElementById('scenarios');
+  scenarios.forEach(sc => {
+    const details = document.createElement('details');
+    details.className = 'scenario';
+
+    let bodyHtml = '';
+    if (sc.subScenarios) {
+      if (sc.note) bodyHtml += `<p class="scenario-meta" style="font-style:italic;">${sc.note}</p>`;
+      sc.subScenarios.forEach(sub => {
+        bodyHtml += `<div class="sub-scenario">
+          <div class="sub-title">${sub.label}</div>
+          <div class="scenario-meta">${metaLine(sub.meta)}</div>
+          ${chainTable(sub.chain)}
+          ${resultBlock()}
+        </div>`;
+      });
+    } else {
+      bodyHtml += `<div class="scenario-meta">${metaLine(sc.meta)}</div>
+        ${chainTable(sc.chain)}
+        ${resultBlock()}`;
+    }
+
+    const scenarioNum = (sc.title.match(/^(\d+\.\d+)/) || [])[1];
+    const matchKey = scenarioNum && issuesByScenario[scenarioNum] ? scenarioNum : null;
+    if (matchKey) {
+      const { label, issues } = issuesByScenario[matchKey];
+      bodyHtml += issuesBlock(label, issues);
+    }
+
+    details.innerHTML = `
+      <summary><span>${sc.title}</span><span class="chev">▶</span></summary>
+      <div class="scenario-body">${bodyHtml}</div>
+    `;
+    container.appendChild(details);
+  });
+
+</script>
+<script>
+  // Resolution bar on each module card
+  document.querySelectorAll('.module-card').forEach(c => {
+    const o = parseInt(c.querySelector('.module-stats .open b').textContent, 10);
+    const d = parseInt(c.querySelector('.module-stats .closed b').textContent, 10);
+    if (isNaN(o) || isNaN(d)) return;
+    const t = o + d, pct = t ? Math.round(d / t * 100) : 100;
+    const el = document.createElement('div');
+    el.innerHTML = `<div class="res-bar"><i style="width:${pct}%"></i></div><div class="res-label">${t ? pct + '% of issues resolved' : 'No issues logged'}</div>`;
+    c.querySelector('.module-stats').after(el);
+  });
+  window.addEventListener('beforeprint', () => document.querySelectorAll('details').forEach(d => d.open = true));
+</script>
+<script>
+(function () {
+  const $ = (q, r = document) => [...r.querySelectorAll(q)];
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Theme toggle
+  const root = document.documentElement, tb = document.getElementById('themeBtn');
+  const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  const label = () => tb.textContent = isDark() ? 'Light mode' : 'Dark mode';
+  try { const t = localStorage.getItem('dash-theme'); if (t) root.dataset.theme = t; } catch (e) {}
+  label();
+  tb.onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; try { localStorage.setItem('dash-theme', root.dataset.theme); } catch (e) {} label(); };
+
+  // Expand / collapse all scenarios
+  const ta = document.getElementById('toggleAll');
+  ta.onclick = () => { const open = ta.textContent === 'Expand all'; $('details').forEach(d => d.open = open); ta.textContent = open ? 'Collapse all' : 'Expand all'; };
+
+  // Issue filter (All / Open / Fixed)
+  const rows = $('.issue-num').map(n => { const par = n.parentElement; const row = par.classList.contains('issue-card') ? par : par; row.dataset.st = n.classList.contains('done') ? 'fixed' : 'open'; return row; });
+  $('.seg-ctl button').forEach(b => b.onclick = () => {
+    $('.seg-ctl button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    const f = b.dataset.f;
+    rows.forEach(r => r.classList.toggle('is-hidden', !(f === 'all' || r.dataset.st === f)));
+    $('.issue-card').forEach(c => { if (c.dataset.st) return; c.classList.toggle('is-hidden', !(f === 'all' || rows.some(r => c.contains(r) && !r.classList.contains('is-hidden')))); });
+    if (f !== 'all') $('details.scenario').forEach(d => { if (d.querySelector('[data-st="' + f + '"]')) d.open = true; });
+    // Jump to the relevant section
+    let target = null;
+    if (f === 'open') target = document.getElementById('open-issues');
+    if (f === 'fixed') target = rows.find(r => r.dataset.st === 'fixed' && !r.classList.contains('is-hidden'));
+    if (target) { target.scrollIntoView({ behavior: 'smooth', block: f === 'fixed' ? 'center' : 'start' }); target.classList.add('flash'); setTimeout(() => target.classList.remove('flash'), 1600); }
+  });
+
+  // Open-issues table rows jump to their module
+  const map = { 'Homepage': 'module-4', 'Wallet': 'module-3', 'Document Request': 'module-5', 'Leave': 'module-1' };
+  $('#open-issues tr').slice(1).forEach(tr => { tr.title = 'Go to module'; tr.onclick = () => { const k = Object.keys(map).find(k => tr.cells[0].textContent.startsWith(k)); if (k) document.getElementById(map[k]).scrollIntoView({ behavior: 'smooth' }); }; });
+  $('.seg .a').forEach(a => a.onclick = () => document.getElementById('open-issues').scrollIntoView({ behavior: 'smooth' }));
+
+  // Entrance: animate bars and count up numbers once
+  const anim = () => {
+    $('.seg i').forEach(i => i.style.width = i.dataset.w + '%');
+    $('.res-bar i').forEach(i => { const w = i.dataset.w; i.style.width = '0'; requestAnimationFrame(() => requestAnimationFrame(() => i.style.width = w)); });
+    if (reduce) return;
+    $('.snap-big, .snap-stats b').forEach(el => {
+      const m = el.textContent.match(/^(\d+)(.*)$/); if (!m) return;
+      const end = +m[1], suf = m[2], t0 = performance.now();
+      const tick = t => { const k = Math.min((t - t0) / 900, 1); el.textContent = Math.round(end * (1 - Math.pow(1 - k, 3))) + suf; if (k < 1) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
+  };
+  $('.res-bar i').forEach(i => { i.dataset.w = i.style.width; i.style.width = '0'; });
+  window.addEventListener('load', anim);
+
+  // Highlight current section in the nav
+  const links = $('.topnav a[href^="#"]');
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('active', a.hash === '#' + e.target.id)); }), { rootMargin: '-15% 0px -75% 0px' });
+  $('#summary, #open-issues, h2[id^="module-"]').forEach(el => io.observe(el));
+})();
+</script>
+</body>
+</html>
